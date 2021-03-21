@@ -59,7 +59,7 @@ void producer(MsgQueue& queue, int size) {
     queue.terminate();
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    printf("PRODUCER-> elapsed %d ms\n", elapsed);
+    printf("PRODUCER-> elapsed %ld ms\n", elapsed);
 }
 
 void consumer(int num, MsgQueue& queue) {
@@ -68,15 +68,21 @@ void consumer(int num, MsgQueue& queue) {
     }
     printf("THREAD #%2.2d -> starting!\n", num);
     auto start = std::chrono::system_clock::now();
+    int count = 0;
+    int fault = 0;
     for (;;) {
-        if (queue.done()) break;
         std::string message = queue.get();
-        if (message.empty()) continue;
+        if (message.empty() && queue.done()) break;
+        if (!message.empty()) {
+            count++;
+        } else {
+            fault++;
+        }
         //printf("THREAD #%2.2d -> got <%s>\n", num, message.c_str());
     }
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    printf("THREAD #%2.2d -> elapsed %d ms\n", num, elapsed);
+    printf("THREAD #%2.2d -> <%d/%d> elapsed %ld ms\n", num, count, fault, elapsed);
 }
 
 int main() {
@@ -89,9 +95,11 @@ int main() {
         futures.push_back(std::move(fut));
     }
     std::cout << "start producer..." << std::endl;
-    producer(queue, 1000000);
+    auto fut = std::async(&producer, std::ref(queue), 1000);
+    futures.push_back(std::move(fut));
+
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    std::cout << "terminating..." << std::endl;
+    std::cout << "waiting..." << std::endl;
 
     std::for_each(futures.begin(), futures.end(), [](std::future<void>& fut) { fut.wait(); });
 
