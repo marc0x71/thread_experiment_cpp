@@ -37,13 +37,14 @@ void test1() {
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 }
 
-class result_monitor {
+class repository {
 public:
 	void add(std::string value) {
 		std::lock_guard<std::mutex> lock(_mutex);
 		_result.push_back(value);
 	}
 	void print() {
+		std::lock_guard<std::mutex> lock(_mutex);
 		std::for_each(_result.begin(), _result.end(), [](std::string& v) { std::cout << v << std::endl; });
 	}
 private:
@@ -51,25 +52,25 @@ private:
 	std::vector<std::string> _result;
 };
 
-void my_thread(int index, result_monitor& monitor) {
+void my_thread(int index, repository& repo) {
 	for (int j = 0; j < 10; j++) {
 		char s[100];
 		sprintf(s, "th #%d - %2.2d", index, j);
-		monitor.add(s);
+		repo.add(s);
 	}
 }
 
 int main() {
-	result_monitor monitor;
+	repository repo;
 	std::vector<std::future<void> > futures;
 
 	for (int i = 0; i < 5; i++) {
-		auto fut = std::async(&my_thread, i + 1, std::ref(monitor));
+		auto fut = std::async(&my_thread, i + 1, std::ref(repo));
 		futures.push_back(std::move(fut));
 	}
 	std::for_each(futures.begin(), futures.end(), [](std::future<void>& fut) { fut.wait(); });
 
-	monitor.print();
+	repo.print();
 
 	return 0;
 }
