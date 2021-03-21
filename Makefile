@@ -9,6 +9,9 @@ run: thread_experiment_cpp
 thread_experiment_cpp: thread_experiment_cpp.o
 	$(CXX) $(LDFLAGS) -o $@ $^ $(LIBS)
 
+producer_consumer: producer_consumer.o
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LIBS)
+
 clean:
 	$(RM) *.o *.d thread_experiment_cpp
 -include $(wildcard *.d)
