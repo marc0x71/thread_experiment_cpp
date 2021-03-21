@@ -1,1 +1,3 @@
-# thread_experiment_cpp
+# Thread experiment in C++
+
+
